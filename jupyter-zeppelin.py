@@ -1,5 +1,6 @@
 import os, sys
 import re
+import argparse
 import csv
 import json
 import html
@@ -58,7 +59,7 @@ def convert_json(zeppelin_json):
 def convert_parsed(zeppelin_note):
     """Converts a Zeppelin note from parsed JSON to a Jupyter NotebookNode.
     """
-    notebook_name = zeppelin_note['name']
+    notebook_name = zeppelin_note['name'].replace('/', '')
 
     cells = []
     index = 0
@@ -155,24 +156,21 @@ def write_notebook(notebook_name, notebook, path=None):
                 if i == 1000:
                     raise RuntimeError('Cannot write %s: versions 1-1000 already exist.' % (notebook_name,))
 
-    with open(filename, 'w+', encoding='UTF-8') as io:
+    with open(filename, 'w', encoding='UTF-8') as io:
         nbformat.write(notebook, io)
 
     return filename
 
 if __name__ == '__main__':
-    num_args = len(sys.argv)
+    parser = argparse.ArgumentParser()
+    parser.add_argument("input_file_path", help="zeppelin notebook file", default=None)
+    parser.add_argument("output_file_path", help="jupyter notebook file", default=None, nargs='?')
 
-    zeppelin_note_path = "note.json"
-    target_path = None
-    if num_args == 2:
-        zeppelin_note_path = sys.argv[1]
-    elif num_args == 3:
-        target_path = sys.argv[2]
-
-    if not zeppelin_note_path:
-        exit()
-
+    args = parser.parse_args()
+    zeppelin_note_path = args.input_file_path
+    target_path = args.output_file_path
+    
     name, content = convert_json(read_io(zeppelin_note_path))
-    write_notebook(name, content, target_path)
+    filename = write_notebook(name, content, target_path)
+    print(f"Converted '{zeppelin_note_path}' to '{filename}'")
 

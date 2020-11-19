@@ -5,7 +5,7 @@ This repo has code for converting Zeppelin notebooks to Jupyter's ipynb format.
 To convert a notebook, run:
 
 ```
-python jupyter-zeppelin.py note.json Example.ipynb
+python jupyter-zeppelin.py zeppelin-example-notebook.json Example.ipynb
 ```
 
 ### Supported conventions

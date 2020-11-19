@@ -5,8 +5,7 @@ import json
 import html
 import nbformat
 import codecs
-from aws.s3 import S3
-from StringIO import StringIO
+from io import StringIO
 
 MD = re.compile(r'%md\s')
 SQL = re.compile(r'%sql\s')
@@ -14,18 +13,12 @@ UNKNOWN_MAGIC = re.compile(r'%\w+\s')
 HTML = re.compile(r'%html\s')
 
 def read_io(path):
-    """Reads the contents of a local or S3 path into a StringIO.
+    """Reads the contents of a local path into a StringIO.
     """
     note = StringIO()
-    if path.startswith("s3://"):
-        s3 = S3(env='prod')
-        for line in s3.read(path):
+    with open(path, encoding='utf-8-sig') as local:
+        for line in local.readlines():
             note.write(line)
-            note.write("\n")
-    else:
-        with open(path) as local:
-            for line in local.readlines():
-                note.write(line)
 
     note.seek(0)
 
@@ -43,9 +36,9 @@ def table_cell_to_html(cell):
 def table_to_html(tsv):
     """Formats the tab-separated content of a Zeppelin TABLE as HTML.
     """
-    io = StringIO.StringIO(tsv)
+    io = StringIO(tsv)
     reader = csv.reader(io, delimiter="\t")
-    fields = reader.next()
+    fields = next(reader)
     column_headers = "".join([ "<th>" + name + "</th>" for name in fields ])
     lines = [
             "<table>",
@@ -162,7 +155,7 @@ def write_notebook(notebook_name, notebook, path=None):
                 if i == 1000:
                     raise RuntimeError('Cannot write %s: versions 1-1000 already exist.' % (notebook_name,))
 
-    with codecs.open(filename, 'w', encoding='UTF-8') as io:
+    with open(filename, 'w+', encoding='UTF-8') as io:
         nbformat.write(notebook, io)
 
     return filename
@@ -170,7 +163,7 @@ def write_notebook(notebook_name, notebook, path=None):
 if __name__ == '__main__':
     num_args = len(sys.argv)
 
-    zeppelin_note_path = None
+    zeppelin_note_path = "note.json"
     target_path = None
     if num_args == 2:
         zeppelin_note_path = sys.argv[1]
